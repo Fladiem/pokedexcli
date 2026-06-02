@@ -1,15 +1,15 @@
-package repl
+package main
 
 import (
 	"strings"
-	"fmt"
 )
 
 func cleanInput(text string) []string {
 	if len(text) == 0 {
-		return []string	
+		var empty []string
+		return empty
 	}
-	
+
 	var low string
 	var output []string
 
