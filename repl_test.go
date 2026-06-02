@@ -3,17 +3,17 @@ package repl_test
 import (
 	"fmt"
 	"testing"
-	"github.com/fladiem/pokedexcli/repl.go"
+	"github.com/Fladiem/pokedexcli/repl"
 )
 	
 
-func TestCleanInput(t testing.T) {
+func TestCleanInput(t *testing.T) {
 	cases := []struct {
 		input string
 		expected []string
 	}{
 		input: "  hello  world  "
-		expected: []string{"hello", "world"},
+		expected: []string{"hello", "world"}
 	}, {
 		input: "I am a Banana"
 		expected: []string{"i", "am", "a", "banana"}
@@ -21,17 +21,17 @@ func TestCleanInput(t testing.T) {
 
 	for _, c := range cases {
 		actual := cleanInput(c.input)
-		if len(actual) != len(expected) {
-			Println(t.Errorf)
-			return
+		if len(actual) != len(c.expected) {
+			t.Errorf()
+			return 
+		}
 		for i := range actual {
 			word := actual[i]
 			expectedWord := c.expected[i]
 			if word != expectedWord {
-				Println(t.Errorf)
+				t.Errorf()
 				return
 			}
-		}
 		}
 	}
 }
