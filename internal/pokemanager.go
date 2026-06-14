@@ -1,0 +1,95 @@
+package pokemanager
+
+import (
+	"fmt"
+	"net/http"
+	"encoding/json"
+)
+//This package handles interactions with the PokeAPI. Necessary structs will be declared here.
+//Decoding JSON files may be handled here, TBD
+
+//The location-area struct
+
+type LocationArea struct {
+	ID                   int                    
+	Name                 string                 
+	GameIndex            int                    
+	EncounterMethodRates []EncounterMethodRates 
+	Location             Location               
+	Names                []Names                
+	PokemonEncounters    []PokemonEncounters    
+}
+//The structs needed by location-area
+type EncounterMethod struct {
+	Name string 
+	URL  string 
+}
+type Version struct {
+	Name string 
+	URL  string 
+}
+type VersionDetails struct {
+	Rate    int     
+	Version Version 
+}
+type EncounterMethodRates struct {
+	EncounterMethod EncounterMethod  
+	VersionDetails  []VersionDetails 
+}
+type Location struct {
+	Name string 
+	URL  string 
+}
+type Language struct {
+	Name string 
+	URL  string 
+}
+type Names struct {
+	Name     string   
+	Language Language 
+}
+type Pokemon struct {
+	Name string 
+	URL  string 
+}
+type Method struct {
+	Name string 
+	URL  string 
+}
+type EncounterDetails struct {
+	MinLevel        int    
+	MaxLevel        int    
+	ConditionValues []any  
+	Chance          int    
+	Method          Method 
+}
+type VersionDetails struct {
+	Version          Version            
+	MaxChance        int                
+	EncounterDetails []EncounterDetails 
+}
+type PokemonEncounters struct {
+	Pokemon        Pokemon          
+	VersionDetails []VersionDetails
+}
+//pokeDecoder decodes JSON data reuqested from pokeAPI
+func pokeAreaDecoder(url string) ([]LocationArea, error) {
+	//acquire JSON from pokeAPI
+	res, err := http.Get(url) 
+	if err != nil {
+		return nil, fmt.Errorf("Error: HTTPS request to pokeAPI failed")
+	}
+	defer res.Body.Close()
+	//declare current LocationArea
+	var curLoc []LocationArea
+	decoder := json.NewDecoder(res.Body)
+	//decode JSON to memory address of curLoc, short for current location
+	if err = decoder.Decode(&curLoc); err != nil {
+		return nil, fmt.Errorf("Error: decoding of requested pokeAPI JSON failed")
+	}
+	/*if err != nil {
+		return nil, fmt.Errorf("Error: decoding of requested pokeAPI JSON failed")
+	}*/
+	//return readable location-area struct
+	return curLoc, nil
+}

@@ -15,9 +15,16 @@ func main() {
 		fmt.Printf("%v", err)
 		os.Exit(0)
 	}
+	//initial config file starts here
+	con, err := initializeConfig()
+	if err != nil {
+		fmt.Printf("%v, err")
+		os.Exit(0)
+	}
+	//reference memory address of config, all callbacks use this pokeConfig pointer
+	conPtr := &con
 	//read user input
 	userInput := bufio.NewScanner(os.Stdin)
-
 	
 //core logic loop; scan -> clean string -> interpret command
 	for ; ; {
@@ -33,7 +40,7 @@ func main() {
 		 
 		if reg[textCln[0]].name == textCln[0] {
 			process:= reg[textCln[0]]
-			err := process.callback()
+			err := process.callback(&con)
 			if err != nil {
 				fmt.Print("%v", err)
 			}			
