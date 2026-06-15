@@ -93,3 +93,7 @@ func pokeAreaDecoder(url string) ([]LocationArea, error) {
 	//return readable location-area struct
 	return curLoc, nil
 }
+
+"https://pokeapi.co/api/v2/location/1/"
+
+"https://pokeapi.co/api/v2/location-area/2/"

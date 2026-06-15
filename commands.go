@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"errors"
 	"os"
-	"pokedexcli/pokemanager"
 )
 //config struct for keeping track of relative map location
-type pokeConfig {
+type pokeConfig struct {
 	next		string
 	previous	string
 	locId		int	
@@ -16,34 +15,100 @@ type pokeConfig {
 type cliCommand struct {
 	name		string
 	description string
-	callback    func() error
+	callback    func(*pokeConfig) error
 }
 //B2: Commands now ordered from newest at the top to oldest at the bottom.
 //Add pointer to config struct in each~ function signature
+func commandMapb(config *pokeConfig) error {
+	if config.locId == 1 {
+		fmt.Print("you're on the first page\n")
+		return nil
+	}
+	config.locId = (config.locId - 21)
+	if config.locId == 1 {
+		config.previous = ""
+		config.next = "https://pokeapi.co/api/v2/location-area/2/"
+	}
+	
+	var data LocationArea
+	var areaName string
+	var err error
+	for i := 1; i < 20; i++ {
+		if config.previous == "" {
+			data, err = pokeAreaDecoder("https://pokeapi.co/api/v2/location-area/1/")
+			if err != nil {
+				return fmt.Errorf("%v", err)
+			}
+			areaName = fmt.Sprintf("%s", data.Name)
+			fmt.Println(areaName)
+			config.locId = 2
+			//fmt.Printf("%d: Location ID", config.locId)
+		}
+		check := config.locId
+		data, err = pokeAreaDecoder(config.next)
+		if err != nil {
+				fmt.Printf("%v", err)
+				continue
+			}
+		areaName = fmt.Sprintf("%s", data.Name)
+		fmt.Println(areaName)
+		//fmt.Printf("%d: Location ID\n", config.locId) //debug print
+		
+		err = iterateConfig(config)
+		if config.locId != (check + 1) {
+			err = errors.New("Error: config location ID did not iterate correctly\n")
+			return err
+		}
+		
+	}
+	//to actually move back 20 after printing
+	config.locId = (config.locId - 21)
+	return nil
+}
+
 func commandMap(config *pokeConfig) error {
 	var data LocationArea
 	var areaName string
-	for i := 1; i < 20; i++ {
+	var err error
+	for i := 1; i < 21; i++ {
+		//special rule for the first call of map
 		if config.previous == "" {
-			data = pokeAreaDecoder("https://pokeapi.co/api/v2/location-area/1/")
-			areaName = fmt.Sprintf("%s", data.Location.Name)
+			data, err = pokeAreaDecoder("https://pokeapi.co/api/v2/location-area/1/")
+			if err != nil {
+				return fmt.Errorf("%v", err)
+			}
+			areaName = fmt.Sprintf("%s", data.Name)
 			fmt.Println(areaName)
-			/*data = pokeAreaDecoder(config.next)
-			areaName = fmt.Sprintf("%s", data.Location.Name)
-			fmt.Println(areaName)*/		
+			/*data, err = pokeAreaDecoder(config.next)
+			if err != nil {
+				return fmt.Errorf("%v", err)
+			}
+			areaName = fmt.Sprintf("%s", data.Name)
+			fmt.Println(areaName)*/
+			config.locId = 2
+			err = iterateConfig(config)
+			if err != nil {
+				return fmt.Errorf("%v", err)
+			}
+			//id is now 2
 	} else {
 		check := config.locId
-		err = iterateConfig(config)
-		if config.locId != (check + 1) {
-			err = errors.New("Error: config location ID did not iterate correctly")
-			return err
+		err := iterateConfig(config)
+		// id has increased 1
+		if config.locId != (check+1) {
+			return errors.New("config did not iterate correctly")
 		}
-		data = pokeAreaDecoder(config.previous)
-		areaName := fmt.Sprintf("%s", data.Location.Name)
+
+		data, err = pokeAreaDecoder(config.previous)
+		if err != nil {
+				fmt.Printf("%v", err)
+				continue
+			}
+		areaName = fmt.Sprintf("%s", data.Name)
 		fmt.Println(areaName)
-	}
-}
-		
+		fmt.Printf("%dID\n", config.locId)
+		}
+	}	
 	return nil
 }
 func commandExit(config *pokeConfig) error {
@@ -83,6 +148,11 @@ func initializeRegistry() (map[string]cliCommand, error) {
 		description: "Display the next 20 locations in the Pokemon world",
 		callback:	 commandMap,	
 	},
+	"mapb" : {
+		name:		 "mapb",
+		description: "Display the last 20 locations in the Pokemon world",
+		callback:	 commandMapb,
+	},
 }
 if len(commandRegistry) == 0 {
 	err := errors.New("Command registry is empty, Pokedex cannot function")
@@ -99,18 +169,18 @@ func initializeConfig() (pokeConfig, error) {
 		locId:		1,	
 	}
 	if rootConfig.previous != "" {
-		return nil, fmt.Errorf("Error: config did not initialize correctly, Pokedex cannot function")
+		return rootConfig, fmt.Errorf("Error: config did not initialize correctly, Pokedex cannot function")
 	}
 	return rootConfig, nil
 } //formatting difference for error handling between initReg and initConfig, leaving in as example.
 //decide on format to use going forward. 26-6-14
 
 func iterateConfig(config *pokeConfig) error {
-		n := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%d/", (*config.locId + 1))
-		p := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%d/", (*config.locId - 1))
-		*config.next = n
-		*config.previous = p
-		*config.locId = *config.locId + 1
+		n := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%d/", (config.locId + 1))
+		p := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%d/", (config.locId - 1))
+		config.next = n
+		config.previous = p
+		config.locId = config.locId + 1
 	
 	return nil
 }

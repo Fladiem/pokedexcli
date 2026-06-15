@@ -40,9 +40,9 @@ func main() {
 		 
 		if reg[textCln[0]].name == textCln[0] {
 			process:= reg[textCln[0]]
-			err := process.callback(&con)
+			err := process.callback(conPtr)
 			if err != nil {
-				fmt.Print("%v", err)
+				fmt.Printf("%v", err)
 			}			
 		} else {
 			fmt.Print("Unknown command\n")
