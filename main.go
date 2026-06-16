@@ -7,7 +7,7 @@ import (
 )
 //Check how to go.build again...
 func main() {
-
+	
 	//command registry starts here
 	reg, err := initializeRegistry()
 	if len(reg) == 0 {

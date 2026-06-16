@@ -8,6 +8,16 @@ import (
 //This package handles interactions with the PokeAPI. Necessary structs will be declared here.
 //Decoding JSON files may be handled here, TBD
 
+type Available struct {
+	Count    int    `json:"count"`
+	Next     string `json:"next"`
+	Previous any    `json:"previous"`
+	Results  []struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"results"`
+}
+
 //The location-area struct
 
 type LocationArea struct {
@@ -62,7 +72,24 @@ type LocationArea struct {
 		} `json:"version_details"`
 	} `json:"pokemon_encounters"`
 }
-//pokeDecoder decodes JSON data reuqested from pokeAPI
+//AvalableDecoder decodes JSON data pertaining to pokeAPI endpoint batches
+func AvailableDecoder(url string) (Available, error) {
+	var av Available
+	res, err := http.Get(url)
+	if err != nil {
+		return av, fmt.Errorf("Error: HTTPS request to pokeAPI failed\n")
+	}
+	defer res.Body.Close()
+
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&av)
+	if err != nil {
+		return av, fmt.Errorf("Error: decoding of requested pokeAPI JSON failed\n%v\n", err)
+	}
+
+	return av, nil
+}
+//pokeDecoder decodes JSON data requested from pokeAPI
 func pokeAreaDecoder(url string) (LocationArea, error) {
 	//acquire JSON from pokeAPI
 	var curLoc LocationArea

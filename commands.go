@@ -20,20 +20,22 @@ type cliCommand struct {
 //B2: Commands now ordered from newest at the top to oldest at the bottom.
 //Add pointer to config struct in each~ function signature
 func commandMapb(config *pokeConfig) error {
-	if config.locId == 1 {
-		fmt.Print("you're on the first page\n")
-		return nil
-	}
-	config.locId = (config.locId - 21)
+
 	if config.locId == 1 {
 		config.previous = ""
 		config.next = "https://pokeapi.co/api/v2/location-area/2/"
 	}
+
+	if config.locId == 1 {
+		fmt.Print("you're on the first page\n")
+		return nil
+	}
+	config.locId = (config.locId - 20)
 	
 	var data LocationArea
 	var areaName string
 	var err error
-	for i := 1; i < 20; i++ {
+	for i := 1; i < 21; i++ {
 		if config.previous == "" {
 			data, err = pokeAreaDecoder("https://pokeapi.co/api/v2/location-area/1/")
 			if err != nil {
@@ -42,17 +44,19 @@ func commandMapb(config *pokeConfig) error {
 			areaName = fmt.Sprintf("%s", data.Name)
 			fmt.Println(areaName)
 			config.locId = 2
+			iterateConfig(config)
 			//fmt.Printf("%d: Location ID", config.locId)
-		}
+		} 
+
 		check := config.locId
 		data, err = pokeAreaDecoder(config.next)
 		if err != nil {
-				fmt.Printf("%v", err)
-				continue
+				fmt.Print("unknown area")
 			}
+
 		areaName = fmt.Sprintf("%s", data.Name)
 		fmt.Println(areaName)
-		//fmt.Printf("%d: Location ID\n", config.locId) //debug print
+		fmt.Printf("%d: Location ID\n", config.locId) //debug print
 		
 		err = iterateConfig(config)
 		if config.locId != (check + 1) {
@@ -62,7 +66,7 @@ func commandMapb(config *pokeConfig) error {
 		
 	}
 	//to actually move back 20 after printing
-	config.locId = (config.locId - 21)
+	config.locId = (config.locId - 20)
 	return nil
 }
 
@@ -79,13 +83,7 @@ func commandMap(config *pokeConfig) error {
 			}
 			areaName = fmt.Sprintf("%s", data.Name)
 			fmt.Println(areaName)
-			/*data, err = pokeAreaDecoder(config.next)
-			if err != nil {
-				return fmt.Errorf("%v", err)
-			}
-			areaName = fmt.Sprintf("%s", data.Name)
-			fmt.Println(areaName)*/
-			config.locId = 2
+
 			err = iterateConfig(config)
 			if err != nil {
 				return fmt.Errorf("%v", err)
@@ -93,22 +91,23 @@ func commandMap(config *pokeConfig) error {
 			//id is now 2
 	} else {
 		check := config.locId
-		err := iterateConfig(config)
-		// id has increased 1
-		if config.locId != (check+1) {
-			return errors.New("config did not iterate correctly")
-		}
 
-		data, err = pokeAreaDecoder(config.previous)
+		data, err = pokeAreaDecoder(config.next)
 		if err != nil {
-				fmt.Printf("%v", err)
-				continue
+				fmt.Print("unknown area")	
 			}
 		areaName = fmt.Sprintf("%s", data.Name)
 		fmt.Println(areaName)
-		fmt.Printf("%dID\n", config.locId)
+		//fmt.Printf("%dID\n", config.locId)
+		
+		err := iterateConfig(config)
+		// id has increased 1
+		if config.locId != (check+1) {
+			return fmt.Errorf("Error: %v, config did not iterate correctly", err)
 		}
-	}	
+		
+		}	
+	}
 	return nil
 }
 func commandExit(config *pokeConfig) error {
@@ -160,7 +159,7 @@ if len(commandRegistry) == 0 {
 }
 return commandRegistry, nil
 }
-
+//config functions below this point
 func initializeConfig() (pokeConfig, error) {
 	var rootConfig pokeConfig
 	rootConfig = pokeConfig{
@@ -181,6 +180,7 @@ func iterateConfig(config *pokeConfig) error {
 		config.next = n
 		config.previous = p
 		config.locId = config.locId + 1
+
 	
 	return nil
 }
