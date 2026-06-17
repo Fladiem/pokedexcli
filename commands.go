@@ -19,6 +19,25 @@ type cliCommand struct {
 }
 //B2: Commands now ordered from newest at the top to oldest at the bottom.
 //Add pointer to config struct in each~ function signature
+
+func commandTest(config *pokeConfig) error {
+	avT, err := AvailableDecoder("https://pokeapi.co/api/v2/location-area/")
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
+	areaBatch, err := AvailableDecoder("https://pokeapi.co/api/v2/location-area/?offset=60&limit=20")
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
+	fmt.Printf("%d: Count\n",avT.Count)
+	fmt.Printf("%s: Next\n", avT.Next)
+	fmt.Printf("%v: Previous\n", avT.Previous)
+	fmt.Printf("%s: Results:Name\n", avT.Results[0].Name)
+	fmt.Printf("%s: Results:URL\n", avT.Results[0].URL)
+	fmt.Printf("%s: AreaBatch\n", areaBatch.Results[0])// this result can be split by whitespace
+	//use AvailableDecoder(emptyID url)=var -> var.Results[0-19] to create reliable, cachable list of resources
+	return nil
+}
 func commandMapb(config *pokeConfig) error {
 
 	if config.locId == 1 {
@@ -33,7 +52,6 @@ func commandMapb(config *pokeConfig) error {
 	config.locId = (config.locId - 20)
 	
 	var data LocationArea
-	var areaName string
 	var err error
 	for i := 1; i < 21; i++ {
 		if config.previous == "" {
@@ -41,22 +59,23 @@ func commandMapb(config *pokeConfig) error {
 			if err != nil {
 				return fmt.Errorf("%v", err)
 			}
-			areaName = fmt.Sprintf("%s", data.Name)
-			fmt.Println(areaName)
+			fmt.Printf("%s", data.Name)
+			
 			config.locId = 2
 			iterateConfig(config)
-			//fmt.Printf("%d: Location ID", config.locId)
+			
+			//fmt.Printf("%d: Location ID", config.locId) //debug print
 		} 
 
 		check := config.locId
 		data, err = pokeAreaDecoder(config.next)
+		//currently for handling empty or incorrect pokeAPI calls
 		if err != nil {
-				fmt.Print("unknown area")
+				fmt.Print("unknown area\n")
 			}
 
-		areaName = fmt.Sprintf("%s", data.Name)
-		fmt.Println(areaName)
-		fmt.Printf("%d: Location ID\n", config.locId) //debug print
+		fmt.Printf("%s\n", data.Name)
+		//fmt.Printf("%d: Location ID\n", config.locId) //debug print
 		
 		err = iterateConfig(config)
 		if config.locId != (check + 1) {
@@ -72,8 +91,8 @@ func commandMapb(config *pokeConfig) error {
 
 func commandMap(config *pokeConfig) error {
 	var data LocationArea
-	var areaName string
 	var err error
+
 	for i := 1; i < 21; i++ {
 		//special rule for the first call of map
 		if config.previous == "" {
@@ -81,9 +100,8 @@ func commandMap(config *pokeConfig) error {
 			if err != nil {
 				return fmt.Errorf("%v", err)
 			}
-			areaName = fmt.Sprintf("%s", data.Name)
-			fmt.Println(areaName)
 
+			fmt.Printf("%s\n", data.Name)
 			err = iterateConfig(config)
 			if err != nil {
 				return fmt.Errorf("%v", err)
@@ -91,23 +109,20 @@ func commandMap(config *pokeConfig) error {
 			//id is now 2
 	} else {
 		check := config.locId
-
 		data, err = pokeAreaDecoder(config.next)
 		if err != nil {
 				fmt.Print("unknown area")	
 			}
-		areaName = fmt.Sprintf("%s", data.Name)
-		fmt.Println(areaName)
-		//fmt.Printf("%dID\n", config.locId)
+		fmt.Printf("%s\n", data.Name)
+		//fmt.Printf("%dID\n", config.locId) //debug print
 		
 		err := iterateConfig(config)
 		// id has increased 1
 		if config.locId != (check+1) {
 			return fmt.Errorf("Error: %v, config did not iterate correctly", err)
 		}
-		
-		}	
-	}
+		} //end else	
+	} //end for block
 	return nil
 }
 func commandExit(config *pokeConfig) error {
@@ -152,6 +167,11 @@ func initializeRegistry() (map[string]cliCommand, error) {
 		description: "Display the last 20 locations in the Pokemon world",
 		callback:	 commandMapb,
 	},
+	"test" : {
+		name:		 "test",
+		description: "Zany hijinks will ensue",
+		callback:	 commandTest,
+	},
 }
 if len(commandRegistry) == 0 {
 	err := errors.New("Command registry is empty, Pokedex cannot function")
@@ -181,7 +201,6 @@ func iterateConfig(config *pokeConfig) error {
 		config.previous = p
 		config.locId = config.locId + 1
 
-	
 	return nil
 }
 

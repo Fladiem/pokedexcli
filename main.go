@@ -10,6 +10,7 @@ func main() {
 	
 	//command registry starts here
 	reg, err := initializeRegistry()
+	
 	if len(reg) == 0 {
 		//fmt.Print("Error: Command registry absent, Pokedex cannot function.")
 		fmt.Printf("%v", err)
