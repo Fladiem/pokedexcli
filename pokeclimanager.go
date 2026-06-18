@@ -73,7 +73,7 @@ type LocationArea struct {
 	} `json:"pokemon_encounters"`
 }
 //AvalableDecoder decodes JSON data pertaining to pokeAPI endpoint batches
-func AvailableDecoder(url string) (Available, error) {
+func BatchDecoder(url string) (Available, error) {
 	var av Available
 	res, err := http.Get(url)
 	if err != nil {
