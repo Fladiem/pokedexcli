@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"errors"
 	"os"
+	"github.com/fladiem/pokedexcli/internal/pokecache"	
 )
+//"github.com/fladiem/pokedexcli/internal/pokecache"
 //config struct for keeping track of relative map location
 type pokeConfig struct {
 	next		string
@@ -15,13 +17,13 @@ type pokeConfig struct {
 type cliCommand struct {
 	name		string
 	description string
-	callback    func(*pokeConfig) error
+	callback    func(*pokeConfig, *pokecache.Cache) error
 }
 //B2: Commands now ordered from newest at the top to oldest at the bottom.
 //Add pointer to config struct in each~ function signature
 
-func commandTest(config *pokeConfig) error {
-	avT, err := BatchDecoder("https://pokeapi.co/api/v2/location-area/")
+func commandTest(config *pokeConfig, c *pokecache.Cache) error {
+	/*avT, err := BatchDecoder("https://pokeapi.co/api/v2/location-area/")
 	if err != nil {
 		fmt.Printf("%v", err)
 	}
@@ -41,10 +43,15 @@ func commandTest(config *pokeConfig) error {
 	fmt.Printf("%T: AreaBatch2 Type\n", areaBatch.Results[1].Name)
 	fmt.Printf("%s: AreaBatch3\n", areaBatch.Results[19].URL)
 	fmt.Printf("%T: AreaBatch3 Type\n", areaBatch.Results[19].URL)
-	//NOTE: Will still need pokeAreaDecoder for in depth details of each area.
+	//NOTE: Will still need pokeAreaDecoder for in depth details of each area.*/
+	avT, err := BatchDecoder("https://pokeapi.co/api/v2/location-area/", c)
+	if err != nil {
+		fmt.Printf("%v", err)
+	}
+	fmt.Printf("%v", avT)
 	return nil
 }
-func commandMapb(config *pokeConfig) error {
+func commandMapb(config *pokeConfig, c *pokecache.Cache) error {
 
 	if config.locId == 0 {
 		config.previous = ""
@@ -58,20 +65,21 @@ func commandMapb(config *pokeConfig) error {
 	//go back 20 areas
 	config.locId = (config.locId - 20)
 	//list 20 areas
-	commandMap(config)
+	commandMap(config, c)
 	//go back 20 areas, stay there until next call
 	config.locId = (config.locId - 20)
 	return nil
 
 } // end func
 //Navigate through map pages 20 at a time
-func commandMap(config *pokeConfig) error {
+func commandMap(config *pokeConfig, c *pokecache.Cache) error {
 	var bat Available
 	var resReq string //resource request for batch of 20 location-area names/URLS
 	var err error
-
+	
 	resReq = fmt.Sprintf("https://pokeapi.co/api/v2/location-area/?offset=%d&limit=21", config.locId)
-	bat, err = BatchDecoder(resReq)
+	
+	bat, err = BatchDecoder(resReq, c)
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
@@ -95,13 +103,13 @@ func commandMap(config *pokeConfig) error {
 		return nil	 
 	} //end func
 
-func commandExit(config *pokeConfig) error {
+func commandExit(config *pokeConfig, c *pokecache.Cache) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(config *pokeConfig) error {
+func commandHelp(config *pokeConfig, c *pokecache.Cache) error {
 	reg, err := initializeRegistry()
 	if err != nil {
 		return err

@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"time"
+	"github.com/fladiem/pokedexcli/internal/pokecache"
 )
-//Check how to go.build again...
+
 func main() {
 	
 	//command registry starts here
@@ -19,13 +21,23 @@ func main() {
 	//initial config file starts here
 	con, err := initializeConfig()
 	if err != nil {
-		fmt.Printf("%v, err")
+		fmt.Printf("%v", err)
 		os.Exit(0)
 	}
 	//reference memory address of config, all callbacks use this pokeConfig pointer
 	conPtr := &con
+
+	//cache initialized here, all callbacks will use cache
+	cache := pokecache.NewCache(5 * time.Second)
+	if len(cache.Data) != 1 {
+		fmt.Printf("cache did not initialize properly\n")
+		os.Exit(0)
+	}
+
 	//read user input
 	userInput := bufio.NewScanner(os.Stdin)
+
+
 	
 //core logic loop; scan -> clean string -> interpret command
 	for ; ; {
@@ -41,7 +53,7 @@ func main() {
 		 
 		if reg[textCln[0]].name == textCln[0] {
 			process:= reg[textCln[0]]
-			err := process.callback(conPtr)
+			err := process.callback(conPtr, cache)
 			if err != nil {
 				fmt.Printf("%v", err)
 			}			

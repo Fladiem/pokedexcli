@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"encoding/json"
+	"io"
+	"github.com/fladiem/pokedexcli/internal/pokecache"
 )
+//"io"
+//"github.com/fladiem/pokedexcli/internal/pokecache"
 //This package handles interactions with the PokeAPI. Necessary structs will be declared here.
 //Decoding JSON files may be handled here, TBD
 
@@ -73,20 +77,42 @@ type LocationArea struct {
 	} `json:"pokemon_encounters"`
 }
 //AvalableDecoder decodes JSON data pertaining to pokeAPI endpoint batches
-func BatchDecoder(url string) (Available, error) {
+func BatchDecoder(url string, c *pokecache.Cache) (Available, error) {
 	var av Available
+	//code to handle url being in cache already
+	value, ok := c.Get(url)
+	if ok {
+		err := json.Unmarshal(value, &av)
+		if err != nil {
+			return av, fmt.Errorf("Error: decoding of cached bytes failed\n")
+		}
+		return av, nil
+	}
+	
+	//end code for using cached data
+
 	res, err := http.Get(url)
+	
+	defer res.Body.Close()
+	
 	if err != nil {
 		return av, fmt.Errorf("Error: HTTPS request to pokeAPI failed\n")
 	}
-	defer res.Body.Close()
-
+	resCopy := res
+	defer resCopy.Body.Close()
+	resBytes, err := io.ReadAll(resCopy.Body)
+	
+	if err != nil {
+		return av, fmt.Errorf("Error: byte encoding failed\n")
+	}
+	
 	decoder := json.NewDecoder(res.Body)
 	err = decoder.Decode(&av)
 	if err != nil {
 		return av, fmt.Errorf("Error: decoding of requested pokeAPI JSON failed\n%v\n", err)
 	}
-
+	//adds new data to the cache
+	c.Add(url, resBytes)
 	return av, nil
 }
 //pokeDecoder decodes JSON data requested from pokeAPI
