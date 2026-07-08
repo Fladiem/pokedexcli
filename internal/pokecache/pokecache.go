@@ -37,9 +37,9 @@ func (c *Cache) reapLoop(interval time.Duration) {
 			//reapticker does not end, using defer for the unlock causes a freeze, MOVED to outer loop before reading occurs
 			//c.mu.Unlock()
 			}
-		}
+		} // end Cache data range loop
 		c.mu.Unlock()
-	}
+	} //end reapTicker loop
 	
 	return
 }
@@ -62,9 +62,9 @@ func NewCache(interval time.Duration) *Cache {
 	go cacheOut.reapLoop(interval)
 
 	return cacheOut
-}
+} //end func
 
-//adds new entries to the cache
+//Cache interface, Add: adds new entries to the cache
 func (c *Cache) Add(key string, value []byte) {
 	c.mu.Lock()
 	c.Data[key] = cacheEntry {
@@ -74,8 +74,9 @@ func (c *Cache) Add(key string, value []byte) {
 	defer c.mu.Unlock()
 
 	return
-}
-//gets entry data from the cache
+}//end func
+
+//Cache interface, Get: gets entry data from the cache
 func (c *Cache) Get(key string) ([]byte, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -87,5 +88,5 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 	//data acquisition has failed
 	fail := make([]byte, 1)
 	return fail, false
-}
+}//end func
 

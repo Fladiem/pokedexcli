@@ -82,40 +82,35 @@ func BatchDecoder(url string, c *pokecache.Cache) (Available, error) {
 	//code to handle url being in cache already
 	value, ok := c.Get(url)
 	if ok {
+		//fmt.Println("-------Cached data used--------")
 		err := json.Unmarshal(value, &av)
 		if err != nil {
 			return av, fmt.Errorf("Error: decoding of cached bytes failed\n")
 		}
 		return av, nil
 	}
-	
 	//end code for using cached data
 
 	res, err := http.Get(url)
-	
+	//fmt.Println("--------cached data not used--------")g
 	defer res.Body.Close()
 	
 	if err != nil {
 		return av, fmt.Errorf("Error: HTTPS request to pokeAPI failed\n")
 	}
-	resCopy := res
-	defer resCopy.Body.Close()
-	resBytes, err := io.ReadAll(resCopy.Body)
 	
+	resBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		return av, fmt.Errorf("Error: byte encoding failed\n")
+		return av, fmt.Errorf("Error: HTTP response did not decode successfully\n")
 	}
-	
-	decoder := json.NewDecoder(res.Body)
-	err = decoder.Decode(&av)
-	if err != nil {
-		return av, fmt.Errorf("Error: decoding of requested pokeAPI JSON failed\n%v\n", err)
-	}
-	//adds new data to the cache
 	c.Add(url, resBytes)
+	err = json.Unmarshal(resBytes, &av)
+	if err != nil {
+		return av, fmt.Errorf("Error: response bytes did not unmarshal successfully")
+	}
 	return av, nil
 }
-//pokeDecoder decodes JSON data requested from pokeAPI
+//pokeDecoder decodes JSON data requested from pokeAPI; EDIT this will use location area url, received in commands, to return specific area info
 func pokeAreaDecoder(url string) (LocationArea, error) {
 	//acquire JSON from pokeAPI
 	var curLoc LocationArea
@@ -124,7 +119,6 @@ func pokeAreaDecoder(url string) (LocationArea, error) {
 		return curLoc, fmt.Errorf("Error: HTTPS request to pokeAPI failed\n")
 	}
 	defer res.Body.Close()
-	//declare current LocationArea
 	
 	decoder := json.NewDecoder(res.Body)
 	//decode JSON to memory address of curLoc, short for current location

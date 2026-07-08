@@ -50,7 +50,12 @@ func commandTest(config *pokeConfig, c *pokecache.Cache) error {
 	}
 	fmt.Printf("%v", avT)
 	return nil
-}
+} // end func
+
+//explore command, lists all pokemon in a location area
+//user will see list of location areas using map
+//this function will: accept location area -> decode response using area URL -> print all pokemon in the area
+
 func commandMapb(config *pokeConfig, c *pokecache.Cache) error {
 
 	if config.locId == 0 {
@@ -71,7 +76,8 @@ func commandMapb(config *pokeConfig, c *pokecache.Cache) error {
 	return nil
 
 } // end func
-//Navigate through map pages 20 at a time
+
+//CommandMap: Navigate through map pages 20 at a time
 func commandMap(config *pokeConfig, c *pokecache.Cache) error {
 	var bat Available
 	var resReq string //resource request for batch of 20 location-area names/URLS
@@ -103,24 +109,27 @@ func commandMap(config *pokeConfig, c *pokecache.Cache) error {
 		return nil	 
 	} //end func
 
+//commandExit: exit the application
 func commandExit(config *pokeConfig, c *pokecache.Cache) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
-}
+} //end func
 
+//commandHelp: display all commands and description for user
 func commandHelp(config *pokeConfig, c *pokecache.Cache) error {
 	reg, err := initializeRegistry()
 	if err != nil {
 		return err
 	}
-	fmt.Println("Welcome to the Pokedex!\nUsage:\n")
+	fmt.Println("Welcome to the Pokedex!")
+	fmt.Println("Usage:")
 	for _, cmd := range reg {
 		fmt.Printf("%s: %s\n", cmd.name, cmd.description)
 	}
 	
 	return nil
-}
+}// end func
 
 //registry of commands; map[command]struct
 func initializeRegistry() (map[string]cliCommand, error) {
@@ -156,7 +165,8 @@ if len(commandRegistry) == 0 {
 	return nil, err
 }
 return commandRegistry, nil
-}
+} // end func
+
 //config functions below this point
 func initializeConfig() (pokeConfig, error) {
 	var rootConfig pokeConfig
