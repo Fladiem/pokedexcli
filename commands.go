@@ -17,12 +17,12 @@ type pokeConfig struct {
 type cliCommand struct {
 	name		string
 	description string
-	callback    func(*pokeConfig, *pokecache.Cache) error
+	callback    func(*pokeConfig, *pokecache.Cache, string) error
 }
 //B2: Commands now ordered from newest at the top to oldest at the bottom.
 //Add pointer to config struct in each~ function signature
 
-func commandTest(config *pokeConfig, c *pokecache.Cache) error {
+func commandTest(config *pokeConfig, c *pokecache.Cache, param string) error {
 	/*avT, err := BatchDecoder("https://pokeapi.co/api/v2/location-area/")
 	if err != nil {
 		fmt.Printf("%v", err)
@@ -55,8 +55,33 @@ func commandTest(config *pokeConfig, c *pokecache.Cache) error {
 //explore command, lists all pokemon in a location area
 //user will see list of location areas using map
 //this function will: accept location area -> decode response using area URL -> print all pokemon in the area
+func commandExplore(config *pokeConfig, c *pokecache.Cache, param string) error {
+	if param == "" {
+		return fmt.Errorf("Explore an area using an area name from the map command. Usage: explore {area name}")
+	}
+	url := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%s/", param)
+	location, err := pokeAreaDecoder(url, c)
+	//fmt.Printf("location: %v", location)
+	
+	//check if location is valid
+	check := fmt.Sprintf("%v", location)
+	if check == "{0  0 [] { } [] []}" { 
+		fmt.Println("area not found")
+		return nil
+	}//end valid location check
+	if err != nil {
+		return fmt.Errorf("%v", err)
+	}
 
-func commandMapb(config *pokeConfig, c *pokecache.Cache) error {
+	var pokeName string
+	for _, encounter := range location.PokemonEncounters {
+		pokeName = encounter.Pokemon.Name
+		fmt.Println(pokeName)
+	}// end for encounter loop
+	return nil
+}
+
+func commandMapb(config *pokeConfig, c *pokecache.Cache, param string) error {
 
 	if config.locId == 0 {
 		config.previous = ""
@@ -70,7 +95,7 @@ func commandMapb(config *pokeConfig, c *pokecache.Cache) error {
 	//go back 20 areas
 	config.locId = (config.locId - 20)
 	//list 20 areas
-	commandMap(config, c)
+	commandMap(config, c, "")
 	//go back 20 areas, stay there until next call
 	config.locId = (config.locId - 20)
 	return nil
@@ -78,7 +103,7 @@ func commandMapb(config *pokeConfig, c *pokecache.Cache) error {
 } // end func
 
 //CommandMap: Navigate through map pages 20 at a time
-func commandMap(config *pokeConfig, c *pokecache.Cache) error {
+func commandMap(config *pokeConfig, c *pokecache.Cache, param string) error {
 	var bat Available
 	var resReq string //resource request for batch of 20 location-area names/URLS
 	var err error
@@ -110,14 +135,14 @@ func commandMap(config *pokeConfig, c *pokecache.Cache) error {
 	} //end func
 
 //commandExit: exit the application
-func commandExit(config *pokeConfig, c *pokecache.Cache) error {
+func commandExit(config *pokeConfig, c *pokecache.Cache, param string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 } //end func
 
 //commandHelp: display all commands and description for user
-func commandHelp(config *pokeConfig, c *pokecache.Cache) error {
+func commandHelp(config *pokeConfig, c *pokecache.Cache, param string) error {
 	reg, err := initializeRegistry()
 	if err != nil {
 		return err
@@ -158,6 +183,11 @@ func initializeRegistry() (map[string]cliCommand, error) {
 		name:		 "test",
 		description: "Zany hijinks will ensue",
 		callback:	 commandTest,
+	},
+	"explore" : {
+		name:        "explore",
+		description: "Display the names of all Pokemon in an area",
+		callback:    commandExplore,
 	},
 }
 if len(commandRegistry) == 0 {

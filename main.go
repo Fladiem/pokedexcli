@@ -50,14 +50,23 @@ func main() {
 		//convert string to list of strings, strip whitespace, lowercase conversion
 		textCln := cleanInput(uString)
 		//Logic for interpreting commands goes here
-		 
-		if reg[textCln[0]].name == textCln[0] {
-			process:= reg[textCln[0]]
-			err := process.callback(conPtr, cache)
+		//first if statement handles case of no additional parameters
+		if reg[textCln[0]].name == textCln[0] && len(textCln) == 1 {
+			//fmt.Printf("command args = 1: first, %s\n", textCln[0])
+			process := reg[textCln[0]]
+			err := process.callback(conPtr, cache, "")
 			if err != nil {
-				fmt.Printf("%v", err)
-			}			
+				fmt.Printf("%v\n", err)
+			}
+		} else if reg[textCln[0]].name == textCln[0] && len(textCln) > 1 { //second if statement handles case of one additional parameter being provided
+			//fmt.Printf("command args > 1: first, %s ; second, %s\n", textCln[0], textCln[1])
+			process := reg[textCln[0]]
+			err := process.callback(conPtr, cache, textCln[1])
+			if err != nil {
+				fmt.Printf("%v\n", err)
+			}
 		} else {
+			//fmt.Printf("command args > 1: first, %s ; second, %s\n", textCln[0], textCln[1])
 			fmt.Print("Unknown command\n")
 		}
 	}
