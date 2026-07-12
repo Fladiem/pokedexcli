@@ -3,3 +3,5 @@ repl.log
 commitlog.txt
 pokeAPIcurling.txt
 pokemanager
+pokedex.go
+pokedex_test.go

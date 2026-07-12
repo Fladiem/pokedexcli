@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"errors"
 	"os"
+	"math/rand"
 	"github.com/fladiem/pokedexcli/internal/pokecache"	
 )
 //"github.com/fladiem/pokedexcli/internal/pokecache"
@@ -12,6 +13,7 @@ type pokeConfig struct {
 	next		string
 	previous	string
 	locId		int	
+	pokedex		map[string]fullPokemon
 }
 //struct for current and future commands
 type cliCommand struct {
@@ -43,14 +45,65 @@ func commandTest(config *pokeConfig, c *pokecache.Cache, param string) error {
 	fmt.Printf("%T: AreaBatch2 Type\n", areaBatch.Results[1].Name)
 	fmt.Printf("%s: AreaBatch3\n", areaBatch.Results[19].URL)
 	fmt.Printf("%T: AreaBatch3 Type\n", areaBatch.Results[19].URL)
-	//NOTE: Will still need pokeAreaDecoder for in depth details of each area.*/
+	//NOTE: Will still need pokeAreaDecoder for in depth details of each area.
 	avT, err := BatchDecoder("https://pokeapi.co/api/v2/location-area/", c)
 	if err != nil {
 		fmt.Printf("%v", err)
 	}
-	fmt.Printf("%v", avT)
+	fmt.Printf("%v", avT)*/
+	pT, err := pokePokeDecoder("https://pokeapi.co/api/v2/pokemon/pikachu/", c)
+	if err != nil {
+		return fmt.Errorf("pokePokeDecoder is WRONG")
+	}
+	fmt.Printf("name: %s, type: %s, held: %s", pT.Name, pT.Types[0].Type.Name, pT.HeldItems[0].Item.Name)
 	return nil
 } // end func
+//catch command, catches a pokemon and adds its data to the pokedex
+//will use math/rand package to randomzie catch chance based on pokemon base xp stat
+func commandCatch(config *pokeConfig, c *pokecache.Cache, param string) error {
+	if param == "" {
+		fmt.Println("Catch a pokemon using a pokemon name from the explore command. Usage: catch {pokemon name}") //inconsistent with implementation in commandExplore
+		return nil
+	}
+	fmt.Printf("Throwing a pokeball at %s...\n", param)
+	url := fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s/", param)
+	pok, err := pokePokeDecoder(url, c)
+	//fmt.Printf("fullpokemon: %v", pok) //testing print
+
+	//check if pokemon is valid
+	check := fmt.Sprintf("%v", pok)
+	if check == "{0  0 0 false 0 0 [] [] [] []  [] { } { <nil>  <nil>  <nil>  <nil> {{ <nil>} { <nil>  <nil>} { } { <nil>  <nil>  <nil>  <nil>}} {{{   } {   }} {{   } {   } {   }} {{ } {   } {   }} {{ <nil>  <nil>  <nil>  <nil>} { <nil>  <nil>  <nil>  <nil>} { <nil>  <nil>  <nil>  <nil>}} {{{ <nil>  <nil>  <nil>  <nil>}  <nil>  <nil>  <nil>  <nil>}} {{ <nil>  <nil>} { <nil>  <nil>}} {{ <nil>} { <nil>  <nil>}} {{ <nil>}}}} { } [] [] [] []}" {
+		fmt.Println("Pokemon does not exist. Try using the explore command to find pokemon.")
+		return nil
+	}// end valid pokemon check
+
+	//check if decode successful
+	if err != nil {
+		return fmt.Errorf("%v", err)
+	}//end decode check
+
+	//check pokemon base experience stat to determine catch chance
+	baseXp := pok.BaseExperience //arceus basexp: 324, feebas basexp: 40 Previously typecasted to int64 to work with rand.NewSource. baseXp := int64(pok.BaseExperience)
+	/*seed := rand.New(rand.NewSource(baseXp)) //This would use a seed based on basexp. It's static, resulting in fixed catch chances. seed.Intn(n) produces the same value
+	for the same pokemon each time, making success guarunteed or impossible for each pokemon.*/
+	gen := rand.Intn(330) //very small chance to catch high base xp Pokemon
+	//fmt.Printf("base exp: %d\n", baseXp)
+	//fmt.Printf("generated int: %d\n", gen)
+	//logic for capture failure/success
+	if baseXp > gen {
+		fmt.Printf("%s escaped!\n", pok.Name)
+		return nil
+	}else if baseXp < gen {
+		config.pokedex[param] = pok
+		fmt.Printf("%s was caught!\n", pok.Name)
+		return nil
+	}else {
+		fmt.Println("Something incomprehensible happened. I should go.")
+		return nil
+	}
+
+	return nil
+}
 
 //explore command, lists all pokemon in a location area
 //user will see list of location areas using map
@@ -62,16 +115,18 @@ func commandExplore(config *pokeConfig, c *pokecache.Cache, param string) error 
 	url := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%s/", param)
 	location, err := pokeAreaDecoder(url, c)
 	//fmt.Printf("location: %v", location)
-	
+
 	//check if location is valid
 	check := fmt.Sprintf("%v", location)
 	if check == "{0  0 [] { } [] []}" { 
-		fmt.Println("area not found")
+		fmt.Println("Area not found, try using the map command to see explorable areas")
 		return nil
 	}//end valid location check
+
+	//check if decode successful
 	if err != nil {
 		return fmt.Errorf("%v", err)
-	}
+	}//end decode check
 
 	var pokeName string
 	for _, encounter := range location.PokemonEncounters {
@@ -114,7 +169,7 @@ func commandMap(config *pokeConfig, c *pokecache.Cache, param string) error {
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
-
+	//config alterations here are vestigial, consider removal
 	for i := 0; i < 20; i++ {
 		
 		n := i+1
@@ -189,6 +244,11 @@ func initializeRegistry() (map[string]cliCommand, error) {
 		description: "Display the names of all Pokemon in an area",
 		callback:    commandExplore,
 	},
+	"catch" : {
+		name:		 "catch",
+		description: "Attempt to catch named pokemon",
+		callback:	 commandCatch,
+	},
 }
 if len(commandRegistry) == 0 {
 	err := errors.New("Command registry is empty, Pokedex cannot function")
@@ -197,16 +257,20 @@ if len(commandRegistry) == 0 {
 return commandRegistry, nil
 } // end func
 
-//config functions below this point
+//config functions below
+//current implementation of config obsolete due to how area locations are now handled in batches, suggest modifying to hold permanent user data like pokedex
 func initializeConfig() (pokeConfig, error) {
 	var rootConfig pokeConfig
+	rootdex := make(map[string]fullPokemon)
 	rootConfig = pokeConfig{
 		next:		"https://pokeapi.co/api/v2/location-area/2/",
 		previous:   "",
-		locId:		0,	
+		locId:		0,
+		pokedex:	rootdex,	
 	}
+
 	if rootConfig.previous != "" {
-		return rootConfig, fmt.Errorf("Error: config did not initialize correctly, Pokedex cannot function")
+		return rootConfig, fmt.Errorf("Error: config did not initialize correctly, Pokedexcli cannot function")
 	}
 	return rootConfig, nil
 } //formatting difference for error handling between initReg and initConfig, leaving in as example.
