@@ -55,9 +55,37 @@ func commandTest(config *pokeConfig, c *pokecache.Cache, param string) error {
 	if err != nil {
 		return fmt.Errorf("pokePokeDecoder is WRONG")
 	}
-	fmt.Printf("name: %s, type: %s, held: %s", pT.Name, pT.Types[0].Type.Name, pT.HeldItems[0].Item.Name)
+	fmt.Printf("struct: %v\n", pT)
+	fmt.Printf("name: %s, type: %s, held: %s\n", pT.Name, pT.Types[0].Type.Name, pT.HeldItems[0].Item.Name)
 	return nil
 } // end func
+
+//inspect command, provides detailed information about pokemon in pokedex
+//will: read pokedex -> verify valid entry -> list details from stored fullPokemon struct
+func commandInspect(config *pokeConfig, c *pokecache.Cache, param string) error {
+	pok, ok := config.pokedex[param] //check for pokemon in pokedex
+	if !ok {
+		fmt.Println("you have not caught that pokemon")
+		return nil
+	}
+
+	if ok {
+		fmt.Printf("Name: %s\n", pok.Name)
+		fmt.Printf("Height: %d\n", pok.Height)
+		fmt.Printf("Weight: %d\n", pok.Weight)
+		fmt.Println("Stats:")
+		//access structs in fullPokemon.Stats
+		for _, stat := range pok.Stats {
+			fmt.Printf("    -%s: %d\n", stat.Stat.Name, stat.BaseStat)
+		}
+		fmt.Println("Types:")
+		//access structs in fullPokemon.Types
+		for _, element := range pok.Types {
+			fmt.Printf("    - %s\n", element.Type.Name)
+		}
+	}
+	return nil
+}
 //catch command, catches a pokemon and adds its data to the pokedex
 //will use math/rand package to randomzie catch chance based on pokemon base xp stat
 func commandCatch(config *pokeConfig, c *pokecache.Cache, param string) error {
@@ -65,7 +93,7 @@ func commandCatch(config *pokeConfig, c *pokecache.Cache, param string) error {
 		fmt.Println("Catch a pokemon using a pokemon name from the explore command. Usage: catch {pokemon name}") //inconsistent with implementation in commandExplore
 		return nil
 	}
-	fmt.Printf("Throwing a pokeball at %s...\n", param)
+	fmt.Printf("Throwing a Pokeball at %s...\n", param)
 	url := fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s/", param)
 	pok, err := pokePokeDecoder(url, c)
 	//fmt.Printf("fullpokemon: %v", pok) //testing print
@@ -110,7 +138,8 @@ func commandCatch(config *pokeConfig, c *pokecache.Cache, param string) error {
 //this function will: accept location area -> decode response using area URL -> print all pokemon in the area
 func commandExplore(config *pokeConfig, c *pokecache.Cache, param string) error {
 	if param == "" {
-		return fmt.Errorf("Explore an area using an area name from the map command. Usage: explore {area name}")
+		fmt.Println("Explore an area using an area name from the map command. Usage: explore {area name}")
+		return nil
 	}
 	url := fmt.Sprintf("https://pokeapi.co/api/v2/location-area/%s/", param)
 	location, err := pokeAreaDecoder(url, c)
@@ -135,6 +164,7 @@ func commandExplore(config *pokeConfig, c *pokecache.Cache, param string) error 
 	}// end for encounter loop
 	return nil
 }
+//command Mapback, undoes the forward movement from command map.
 
 func commandMapb(config *pokeConfig, c *pokecache.Cache, param string) error {
 
@@ -246,8 +276,13 @@ func initializeRegistry() (map[string]cliCommand, error) {
 	},
 	"catch" : {
 		name:		 "catch",
-		description: "Attempt to catch named pokemon",
+		description: "Attempt to catch named Pokemon",
 		callback:	 commandCatch,
+	},
+	"inspect": {
+		name:        "inspect",
+		description: "Inspect the Pokemon you have caught in your Pokedex",
+		callback:    commandInspect,
 	},
 }
 if len(commandRegistry) == 0 {

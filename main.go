@@ -36,6 +36,7 @@ func main() {
 
 	//read user input
 	userInput := bufio.NewScanner(os.Stdin)
+	fmt.Println(`Welcome to The Pokedex! Try "help" for a list of commands.` )
 
 
 	
@@ -51,7 +52,9 @@ func main() {
 		textCln := cleanInput(uString)
 		//Logic for interpreting commands goes here
 		//first if statement handles case of no additional parameters
-		if reg[textCln[0]].name == textCln[0] && len(textCln) == 1 {
+		if len(textCln) == 0 {
+			fmt.Println("I should go.")
+		} else if reg[textCln[0]].name == textCln[0] && len(textCln) == 1 {
 			//fmt.Printf("command args = 1: first, %s\n", textCln[0])
 			process := reg[textCln[0]]
 			err := process.callback(conPtr, cache, "")
@@ -67,7 +70,7 @@ func main() {
 			}
 		} else {
 			//fmt.Printf("command args > 1: first, %s ; second, %s\n", textCln[0], textCln[1])
-			fmt.Print("Unknown command\n")
+			fmt.Println("Unknown command")
 		}
 	}
 
