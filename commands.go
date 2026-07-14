@@ -25,11 +25,11 @@ type cliCommand struct {
 //Add pointer to config struct in each~ function signature
 
 func commandTest(config *pokeConfig, c *pokecache.Cache, param string) error {
-	/*avT, err := BatchDecoder("https://pokeapi.co/api/v2/location-area/")
+	avT, err := BatchDecoder("https://pokeapi.co/api/v2/location-area/", c)
 	if err != nil {
 		fmt.Printf("%v", err)
 	}
-	areaBatch, err := BatchDecoder("https://pokeapi.co/api/v2/location-area/?offset=60&limit=20")
+	areaBatch, err := BatchDecoder("https://pokeapi.co/api/v2/location-area/?offset=60&limit=20", c)
 	if err != nil {
 		fmt.Printf("%v", err)
 	}
@@ -46,20 +46,27 @@ func commandTest(config *pokeConfig, c *pokecache.Cache, param string) error {
 	fmt.Printf("%s: AreaBatch3\n", areaBatch.Results[19].URL)
 	fmt.Printf("%T: AreaBatch3 Type\n", areaBatch.Results[19].URL)
 	//NOTE: Will still need pokeAreaDecoder for in depth details of each area.
-	avT, err := BatchDecoder("https://pokeapi.co/api/v2/location-area/", c)
+	avT, err = BatchDecoder("https://pokeapi.co/api/v2/location-area/", c)
 	if err != nil {
 		fmt.Printf("%v", err)
 	}
-	fmt.Printf("%v", avT)*/
+	fmt.Printf("%v", avT)
 	pT, err := pokePokeDecoder("https://pokeapi.co/api/v2/pokemon/pikachu/", c)
 	if err != nil {
 		return fmt.Errorf("pokePokeDecoder is WRONG")
 	}
-	fmt.Printf("struct: %v\n", pT)
+	fmt.Printf("struct: %v\n", pT.Sprites)
 	fmt.Printf("name: %s, type: %s, held: %s\n", pT.Name, pT.Types[0].Type.Name, pT.HeldItems[0].Item.Name)
 	return nil
 } // end func
-
+//pokedex command, lists the names of pokemon in the user's pokedex
+func commandPokedex(config *pokeConfig, c *pokecache.Cache, param string) error {
+	fmt.Println("Your Pokedex:")
+	for _, pok := range config.pokedex {
+		fmt.Printf(" - %s\n", pok.Name)
+	}
+	return nil
+}
 //inspect command, provides detailed information about pokemon in pokedex
 //will: read pokedex -> verify valid entry -> list details from stored fullPokemon struct
 func commandInspect(config *pokeConfig, c *pokecache.Cache, param string) error {
@@ -85,7 +92,7 @@ func commandInspect(config *pokeConfig, c *pokecache.Cache, param string) error 
 		}
 	}
 	return nil
-}
+}//end func
 //catch command, catches a pokemon and adds its data to the pokedex
 //will use math/rand package to randomzie catch chance based on pokemon base xp stat
 func commandCatch(config *pokeConfig, c *pokecache.Cache, param string) error {
@@ -124,6 +131,7 @@ func commandCatch(config *pokeConfig, c *pokecache.Cache, param string) error {
 	}else if baseXp < gen {
 		config.pokedex[param] = pok
 		fmt.Printf("%s was caught!\n", pok.Name)
+		fmt.Println("You may now inspect it with the inspect command.")
 		return nil
 	}else {
 		fmt.Println("Something incomprehensible happened. I should go.")
@@ -283,6 +291,11 @@ func initializeRegistry() (map[string]cliCommand, error) {
 		name:        "inspect",
 		description: "Inspect the Pokemon you have caught in your Pokedex",
 		callback:    commandInspect,
+	},
+	"pokedex": {
+		name:        "pokedex",
+		description: "Display the names of all Pokemon registered in your Pokedex",
+		callback:    commandPokedex,
 	},
 }
 if len(commandRegistry) == 0 {
