@@ -441,7 +441,7 @@ func pokePokeDecoder(url string, c *pokecache.Cache) (fullPokemon, error) {
 	//code to handle url being in cache already
 	value, ok := c.Get(url)
 	if ok {
-		fmt.Println("-------Cached data used--------")
+		//fmt.Println("-------Cached data used--------")
 		err := json.Unmarshal(value, &who)
 		if err != nil {
 			return who, fmt.Errorf("Error: decoding of cached bytes failed\n")

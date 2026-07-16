@@ -129,7 +129,7 @@ func commandCatch(config *pokeConfig, c *pokecache.Cache, param string) error {
 		fmt.Printf("%s escaped!\n", pok.Name)
 		return nil
 	}else if baseXp < gen {
-		config.pokedex[param] = pok
+		config.pokedex[pok.Name] = pok //adding pok.Name instead of param to avoid inspect bug when catching by number (ex: catch 25)
 		fmt.Printf("%s was caught!\n", pok.Name)
 		fmt.Println("You may now inspect it with the inspect command.")
 		return nil
@@ -240,8 +240,7 @@ func commandHelp(config *pokeConfig, c *pokecache.Cache, param string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Welcome to the Pokedex!")
-	fmt.Println("Usage:")
+	fmt.Println("Pokedex commands:\n")
 	for _, cmd := range reg {
 		fmt.Printf("%s: %s\n", cmd.name, cmd.description)
 	}
